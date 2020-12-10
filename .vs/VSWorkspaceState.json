@@ -1,0 +1,17 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\javaagents\\src\\main",
+    "\\javaagents\\src\\main\\java",
+    "\\javaagents\\src\\main\\java\\massim",
+    "\\javaagents\\src\\main\\java\\massim\\javaagents",
+    "\\javaagents\\src\\main\\java\\massim\\javaagents\\agents",
+    "\\server\\src",
+    "\\server\\src\\main",
+    "\\server\\src\\main\\java",
+    "\\server\\src\\main\\java\\massim",
+    "\\server\\src\\main\\java\\massim\\scenario",
+    "\\server\\src\\main\\java\\massim\\scenario\\city"
+  ],
+  "PreviewInSolutionExplorer": false
+}

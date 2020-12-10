@@ -1,0 +1,10 @@
+massim\javaagents\agents\DummyAgent$State.class
+massim\javaagents\agents\DummyAgent.class
+massim\javaagents\agents\Agent.class
+massim\javaagents\Main.class
+massim\javaagents\Scheduler.class
+massim\javaagents\agents\WarpAgent.class
+massim\javaagents\Scheduler$AgentConf.class
+massim\javaagents\agents\DummyAgent$Loc.class
+massim\javaagents\agents\BasicAgent.class
+massim\javaagents\MailService.class
