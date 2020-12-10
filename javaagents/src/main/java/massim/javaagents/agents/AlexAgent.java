@@ -10,6 +10,11 @@ import java.util.List;
  */
 public class AlexAgent extends Agent {
 
+	private Map<String, Percept> jobs = new HashMap<>();
+	private String role = "";
+    private int battery = 0;
+
+
     /**
      * Constructor.
      * @param name    the agent's name
@@ -22,8 +27,6 @@ public class AlexAgent extends Agent {
     @Override
     public void handlePercept(Percept percept) {}
 
-    @Override
-    public void handleMessage(Percept message, String sender) {}
 
     @Override
     public Action step() {
@@ -33,8 +36,43 @@ public class AlexAgent extends Agent {
                 case "job":
                     jobs.put(getStringParam(percept, 0), percept);
                     break;
-                case "resourceNode":
-
+                case "role":
+                    role = getStringParam(percept, 0);
+                    battery = getIntParam(percept, 9);
+                    break;
         return new Action("skip");
+    }
+
+	private Action act() {
+	}
+
+	private int getIntParam(Percept percept, int position) {
+        Parameter p = percept.getParameters().get(position);
+        if (p instanceof Numeral) return ((Numeral) p).getValue().intValue();
+        return 0;
+    }
+
+	private String getStringParam(Percept percept, int position) {
+        Parameter p = percept.getParameters().get(position);
+        if (p instanceof Identifier) return ((Identifier) p).getValue();
+        return "";
+    }
+
+	@Override
+    public void handleMessage(Percept message, String sender) {
+        switch(message.getName()) {
+            case "leader":
+                this.leader = sender;
+                say("I agree to " + sender + " being the group leader.");
+                break;
+            case "resourceNode":
+                String name = ((Identifier)message.getParameters().get(0)).getValue();
+                String resource = ((Identifier)message.getParameters().get(3)).getValue();
+                resourceNodes.put(name, message);
+                availableResources.add(resource);
+                break;
+            default:
+                say("I cannot handle a message of type " + message.getName());
+        }
     }
 }
