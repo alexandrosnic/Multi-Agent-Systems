@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * Main class of the City scenario (2017).
  * @author ta10
  */
-public class CitySimulation extends AbstractSimulation {
+public class AlexSimulation extends AbstractSimulation {
 
     private int currentStep = -1;
     private WorldState world;
@@ -143,6 +143,7 @@ public class CitySimulation extends AbstractSimulation {
         // create complete snapshots of entities
         Map<String, EntityData> completeEntities = buildEntityData();
 
+		// ************** BEGINNING: THIS IS SOMETHING NEEDED TO BE CHANGED **************
         /* create facility data */
         List<ShopData> shops = buildShopData();
         List<WorkshopData> workshops = buildWorkshopData();
@@ -150,6 +151,7 @@ public class CitySimulation extends AbstractSimulation {
         List<DumpData> dumps = buildDumpData();
         List<ResourceNodeData> resourceNodes = buildResourceNodeData();
         List<WellData> wells = buildWellData();
+		// ************** END: THIS IS SOMETHING NEEDED TO BE CHANGED **************
 
         // storage
         Map<String, List<StorageData>> storageMap = new HashMap<>();
@@ -296,6 +298,12 @@ public class CitySimulation extends AbstractSimulation {
                 .map(node -> new ResourceNodeData(node.getName(), node.getLocation().getLat(), node.getLocation().getLon(), node.getResource().getName()))
                 .collect(Collectors.toList());
     }
+
+	// ************* BEGINNING: THIS IS SOMETHING NEEDED TO BE CHANGED **************
+	// Just create something similar as above for any entity you add
+	// ************** END: THIS IS SOMETHING NEEDED TO BE CHANGED **************
+
+
 
     /**
      * Builds an {@link EntityData} object for each entity in the simulation.
@@ -507,6 +515,13 @@ public class CitySimulation extends AbstractSimulation {
     @Override
     public void handleCommand(String[] command) {
         switch (command[0]){
+
+
+			// ************* BEGINNING: THIS IS SOMETHING NEEDED TO BE CHANGED **************
+			// Maybe we need to add a command
+			// ************** END: THIS IS SOMETHING NEEDED TO BE CHANGED **************
+
+
             case "give": // "give item0 agentA1 1"
                 if(command.length == 4){
                     Item item = world.getItemByName(command[1]);

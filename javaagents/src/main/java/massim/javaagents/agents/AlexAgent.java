@@ -3,7 +3,7 @@ package massim.javaagents.agents;
 import eis.iilang.*;
 import massim.javaagents.MailService;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * A very basic agent.
@@ -40,11 +40,12 @@ public class AlexAgent extends Agent {
                     role = getStringParam(percept, 0);
                     battery = getIntParam(percept, 9);
                     break;
-        return new Action("skip");
+			}
+		}
     }
 
-	private Action act() {
-	}
+	/*private Action act() {
+	}*/
 
 	private int getIntParam(Percept percept, int position) {
         Parameter p = percept.getParameters().get(position);
