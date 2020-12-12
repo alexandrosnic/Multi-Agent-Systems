@@ -1,7 +1,7 @@
 {
   "server": {
     "tournamentMode": "round-robin",
-    "teamsPerMatch": 2,
+    "teamsPerMatch": 1,
     "teamSize": 8,
     "launch": "5s",
     "port": 12300,
@@ -43,12 +43,80 @@
       "upgrades": "$(upgrades/upgrades.json)",
       "roles": "$(roles/roles.json)",
       "entities": [
-        { "drone": 2 },
-        { "motorcycle": 2 },
-        { "car": 2 },
+        { "drone": 6 },
+        { "motorcycle": 0 },
+        { "car": 0 },
         { "truck": 2 }
       ],
-      "generate": "$(generate/generate.json)"
+
+      "generate": {
+        "facilities": {
+          "quadSize": 0.4,
+          "chargingStations": {
+            "density": 1,
+            "rateMin": 50,
+            "rateMax": 150
+          },
+          "shops": {
+            "density": 2,
+            "tradeModMin": 1,
+            "tradeModMax": 4
+          },
+          "dumps": {
+            "density": 1
+          },
+          "workshops": {
+            "density": 1
+          },
+          "storage": {
+            "density": 1,
+            "capacityMin": 7500,
+            "capacityMax": 15000
+          },
+          "resourceNodes": {
+            "density": 1,
+            "thresholdMin": 10,
+            "thresholdMax": 20
+          },
+          "wells": {
+            "wellTypesMin": 2,
+            "wellTypesMax": 5,
+            "baseEfficiencyMin": 1,
+            "baseEfficiencyMax": 5,
+            "efficiencyIncreaseMin": 1,
+            "efficiencyIncreaseMax": 5,
+            "baseIntegrityMin": 50,
+            "baseIntegrityMax": 100,
+            "costFactor": 100
+          }
+        },
+        "items": {
+          "resourcesMin": 10,
+          "resourcesMax": 11,
+          "levelDecreaseMin": 1,
+          "levelDecreaseMax": 2,
+          "graphDepthMin": 3,
+          "graphDepthMax": 4,
+          "volMin": 5,
+          "volMax": 10,
+          "partsMin": 2,
+          "partsMax": 8
+        },
+        "jobs": {
+          "jobProbability": 0.2,
+          "auctionProbability": 0.1,
+          "missionProbability": 0.01,
+          "jobDurationMin": 50,
+          "jobDurationMax": 100,
+          "rewardModMin": 10,
+          "rewardModMax": 20,
+          "itemCountMin": 2,
+          "itemCountMax": 10,
+          "auctions": {
+            "auctionTime": 5
+          }
+        }
+      }
     }
   ],
 
