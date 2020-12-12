@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * Main class of the City scenario (2017).
  * @author ta10
  */
-public class AlexSimulation extends AbstractSimulation {
+public class DeliverySimulation extends AbstractSimulation {
 
     private int currentStep = -1;
     private WorldState world;

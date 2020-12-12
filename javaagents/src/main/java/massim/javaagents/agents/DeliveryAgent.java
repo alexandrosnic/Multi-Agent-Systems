@@ -6,9 +6,9 @@ import massim.javaagents.MailService;
 import java.util.*;
 
 /**
- * A AlexAgent Created in 2018 for the 2018 City scenario.
+ * A DeliveryAgent Created in 2018 for the 2018 City scenario.
  */
-public class AlexAgent extends Agent{
+public class DeliveryAgent extends Agent{
 
     private State state = State.EXPLORE;
     private Percept goal;
@@ -62,7 +62,7 @@ public class AlexAgent extends Agent{
      * @param name    the agent's name
      * @param mailbox the mail facility
      */
-    public AlexAgent(String name, MailService mailbox) {
+    public DeliveryAgent(String name, MailService mailbox) {
         super(name, mailbox);
     }
 
@@ -157,9 +157,11 @@ public class AlexAgent extends Agent{
 
         if(leader.equals(getName())) say("Score: " + score + " Massium: " + massium);
 
+        /*
 		if(carriedItems.isEmpty()==false){
             say("I carry " + carriedItems);
         }
+        */
 
 
 
@@ -206,15 +208,17 @@ public class AlexAgent extends Agent{
             else {
                 if (chargingTarget != null) {
                     if (atLoc(chargingTarget)) {
-                        return new Action("charge");
+                        actionQueue.add(new Action("charge"));
                     }
                     else {
-                        return new Action("goto", new Numeral(chargingTarget.lat), new Numeral(chargingTarget.lon));
+                        actionQueue.add(new Action("goto", 
+                        new Numeral(chargingTarget.lat), new Numeral(chargingTarget.lon)));
                     }
                 }
             }
         }
 
+        /*
         if(leader.equals(getName())) {
             if(state == State.BUILD) {
                 if(buildCounter-- == 0) {
@@ -222,16 +226,17 @@ public class AlexAgent extends Agent{
                 }
                 else {
                     lastBuild = step;
-                    return new Action("build");
+                    actionQueue.add(new Action("build"));
                 }
             }
 
             if(step - lastBuild > 30 && wellName != null && massium > wellCost) {
                 state = State.BUILD;
                 buildCounter = 20; // IMPROVE check actual progress
-                return new Action("build", new Identifier(wellName));
+                actionQueue.add(new Action("build", new Identifier(wellName)));
             }
         }
+        */
 
         if(exploreTarget != null) {
             if(atLoc(exploreTarget)) {
@@ -246,7 +251,7 @@ public class AlexAgent extends Agent{
                 double expLon = minLon + rand.nextDouble() * (maxLon - minLon);
                 exploreTarget = new Loc(expLat, expLon);
             }
-            return new Action("goto", new Numeral(exploreTarget.lat), new Numeral(exploreTarget.lon));
+            actionQueue.add(new Action("goto", new Numeral(exploreTarget.lat), new Numeral(exploreTarget.lon)));
         }
 
 
@@ -333,6 +338,7 @@ public class AlexAgent extends Agent{
             actionQueue.add(new Action("deliver_job", new Identifier(myJob)));
         }
 
+        /*
 		if(numItems > 10) {
 			String dumpString = "";
 			double minDist = Double.MAX_VALUE;
@@ -352,7 +358,8 @@ public class AlexAgent extends Agent{
 
 		if(atLoc(dumpLoc)){
 			return new Action("dump");
-		}
+        }
+        */
 
 		return actionQueue.peek() != null? actionQueue.poll() : new Action("skip");
     }
@@ -410,7 +417,7 @@ public class AlexAgent extends Agent{
     }
 
     enum State {
-        EXPLORE, RECHARGE, JOB, BUILD
+        EXPLORE, RECHARGE, JOB
     }
 
     private static ParameterList listParam(Percept p, int index){

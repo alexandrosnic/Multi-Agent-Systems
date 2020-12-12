@@ -13,7 +13,7 @@ import massim.javaagents.agents.Agent;
 import massim.javaagents.agents.BasicAgent;
 import massim.javaagents.agents.DummyAgent;
 import massim.javaagents.agents.WarpAgent;
-import massim.javaagents.agents.AlexAgent;
+import massim.javaagents.agents.DeliveryAgent;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -98,8 +98,8 @@ public class Scheduler implements AgentListener, EnvironmentListener{
                 case "DummyAgent":
                     agent = new DummyAgent(agentConf.name, mailService);
                     break;
-				case "AlexAgent":
-                    agent = new AlexAgent(agentConf.name, mailService);
+				case "DeliveryAgent":
+                    agent = new DeliveryAgent(agentConf.name, mailService);
                     break;
                 // [add further types here]
                 default:

@@ -22,7 +22,7 @@
 
   "match": [
     {
-      "id": "2018-AlexSimulation",
+      "id": "2018-DeliverySimulation",
       "scenarioClass": "city.CitySimulation",
       "steps": 1000,
       "map": "paris",
@@ -58,7 +58,7 @@
             "rateMax": 150
           },
           "shops": {
-            "density": 2,
+            "density": 6,
             "tradeModMin": 1,
             "tradeModMax": 4
           },
