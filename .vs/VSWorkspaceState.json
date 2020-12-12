@@ -1,14 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\javaagents",
-    "\\javaagents\\conf",
-    "\\javaagents\\src\\main",
-    "\\javaagents\\src\\main\\java",
-    "\\javaagents\\src\\main\\java\\massim",
-    "\\javaagents\\src\\main\\java\\massim\\javaagents",
-    "\\javaagents\\src\\main\\java\\massim\\javaagents\\agents",
     "\\server",
+    "\\server\\conf",
+    "\\server\\conf\\server",
     "\\server\\src",
     "\\server\\src\\main",
     "\\server\\src\\main\\java",
@@ -16,6 +11,6 @@
     "\\server\\src\\main\\java\\massim\\scenario",
     "\\server\\src\\main\\java\\massim\\scenario\\city"
   ],
-  "SelectedNode": "\\javaagents\\conf\\AlexAgents",
+  "SelectedNode": "\\server\\src\\main\\java\\massim\\Server.java",
   "PreviewInSolutionExplorer": false
 }

@@ -1,41 +1,59 @@
 {
-  "server" : "$(server/server.json)",
+  "server": {
+    "tournamentMode": "round-robin",
+    "teamsPerMatch": 2,
+    "teamSize": 8,
+    "launch": "5s",
+    "port": 12300,
+    "backlog": 10000,
+    "agentTimeout": 4000,
+    "resultPath": "results",
+    "logLevel": "normal",
+    "logPath": "logs",
+    "replayPath": "replays",
+    "maxPacketLength": 65536
+  },
 
-  "manual-mode" : [
-    ["A", "B"],
-    ["B", "C"],
-    ["A", "C"]
+  "manual-mode": [
+    [ "A", "B" ],
+    [ "B", "C" ],
+    [ "A", "C" ]
   ],
 
-  "match" : [
+  "match": [
     {
-      "id" : "2018-AlexSimulation",
-      "scenarioClass" : "city.AlexSimulation",
-      "steps" : 1000,
-      "map" : "paris",
-      "seedCapital" : 5000,
-      "minLon" : 2.26,
-      "maxLon" : 2.41,
-      "minLat" : 48.82,
-      "maxLat" : 48.90,
-      "centerLat" : 48.8424,
-      "centerLon" : 2.3209,
-      "proximity" : 5,
-      "cellSize" : 200,
-      "randomSeed" : 18,
-      "randomFail" : 1,
-      "gotoCost" : 1,
-      "rechargeRate" : 0.3,
+      "id": "2018-AlexSimulation",
+      "scenarioClass": "city.CitySimulation",
+      "steps": 1000,
+      "map": "paris",
+      "seedCapital": 5000,
+      "minLon": 2.26,
+      "maxLon": 2.41,
+      "minLat": 48.82,
+      "maxLat": 48.90,
+      "centerLat": 48.8424,
+      "centerLon": 2.3209,
+      "proximity": 5,
+      "cellSize": 200,
+      "randomSeed": 18,
+      "randomFail": 1,
+      "gotoCost": 1,
+      "rechargeRate": 0.3,
 
-      "upgrades" : "$(upgrades/upgrades.json)",
-      "roles" : "$(roles/roles.json)",
-      "entities" : [{"drone" : 2}, {"motorcycle" : 3}, {"car" : 4}, {"truck" : 5}],
-      "generate" : "$(generate/generate.json)"
+      "upgrades": "$(upgrades/upgrades.json)",
+      "roles": "$(roles/roles.json)",
+      "entities": [
+        { "drone": 2 },
+        { "motorcycle": 2 },
+        { "car": 2 },
+        { "truck": 2 }
+      ],
+      "generate": "$(generate/generate.json)"
     }
   ],
 
-  "teams" : {
-    "A" : "$(teams/A.json)",
-    "B" : "$(teams/B.json)"
+  "teams": {
+    "A": "$(teams/A.json)",
+    "B": "$(teams/B.json)"
   }
 }

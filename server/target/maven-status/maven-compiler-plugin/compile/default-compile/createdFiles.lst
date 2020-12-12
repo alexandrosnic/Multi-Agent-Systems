@@ -24,6 +24,7 @@ massim\scenario\city\data\ItemBox.class
 massim\scenario\city\data\Location.class
 massim\scenario\city\data\Mission.class
 massim\AgentManager.class
+massim\scenario\city\AlexSimulation.class
 massim\AgentManager$1.class
 massim\scenario\city\util\GraphHopperManager.class
 massim\util\InputManager.class
