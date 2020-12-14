@@ -22,7 +22,7 @@
 
   "match": [
     {
-      "id": "2018-DeliverySimulation",
+      "id": "2020-DeliverySimulation",
       "scenarioClass": "city.CitySimulation",
       "steps": 1000,
       "map": "paris",
@@ -58,18 +58,18 @@
             "rateMax": 150
           },
           "shops": {
-            "density": 6,
+            "density": 0,
             "tradeModMin": 1,
             "tradeModMax": 4
           },
           "dumps": {
-            "density": 1
+            "density": 0
           },
           "workshops": {
-            "density": 1
+            "density": 0
           },
           "storage": {
-            "density": 1,
+            "density": 6,
             "capacityMin": 7500,
             "capacityMax": 15000
           },
@@ -92,7 +92,7 @@
         },
         "items": {
           "resourcesMin": 10,
-          "resourcesMax": 11,
+          "resourcesMax": 15,
           "levelDecreaseMin": 1,
           "levelDecreaseMax": 2,
           "graphDepthMin": 3,

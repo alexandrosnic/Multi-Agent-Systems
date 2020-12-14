@@ -29,6 +29,7 @@ public class DeliveryAgent extends Agent{
     private int step = 0;
 
     private Map<String, Percept> resourceNodes = new HashMap<>();
+    private Map<String, Percept> storageGlobal = new HashMap<>();
     private Set<String> availableResources = new HashSet<>();
     private String wellName;
     private int wellCost = Integer.MAX_VALUE;
@@ -37,6 +38,7 @@ public class DeliveryAgent extends Agent{
     private String leader = "";
     private Loc exploreTarget;
     private Loc chargingTarget;
+    private Loc resourceNodeTarget;
     private int buildCounter;
     private int lastBuild = -100;
     private String currentJob = "";
@@ -45,14 +47,27 @@ public class DeliveryAgent extends Agent{
     private Random rand = new Random(17);
 
 	//***************      What I added:	***************
-	String carriedItems = "";
-	int numItems = 0;
+	private String carriedItems = "";
+	private int numItems = 0;
 	private Map<String, Percept> shopsPercept = new HashMap<>();
 	private Map<String, Percept> dumpsPercept = new HashMap<>();
 	private String myJob;
 	private Set<String> jobsTaken = new HashSet<>();
 	private Queue<Action> actionQueue = new LinkedList<>();
 	private Loc dumpLoc;
+	private Map<String, Percept> currentJobsGlobal = new HashMap<>();
+	private Map<String, List<Percept>> shopsByItemGlobal = new HashMap<>();
+	private Loc shopLoc;
+	private Loc storageLoc;
+    private List<Percept> shopsGlobal;
+    private List<Percept> agentsGlobal;
+    private List<Percept> dronesGlobal;
+    private List<Percept> trucksGlobal;
+	private String itemNameGlobal;
+	private int amountGlobal;
+    private boolean flagCharged = true;
+    private boolean busy;
+    private Percept currentItem;
 	// ****************************************************
 
 
@@ -84,14 +99,26 @@ public class DeliveryAgent extends Agent{
                     jobs.put(getStringParam(percept, 0), percept);
                     break;
                 case "resourceNode":
+                    String resourceNodeName = getStringParam(percept, 0);
                     broadcast(percept, getName());
-                    resourceNodes.put(getStringParam(percept, 0), percept);
+                    resourceNodes.put(resourceNodeName, percept);
                     availableResources.add(getStringParam(percept, 3));
-                    say("Found a resource node.");
+                    say("Found a resource node of name " + resourceNodeName);
+                    break;
+                case "storage":
+                    storageGlobal.put(getStringParam(percept, 0), percept);
                     break;
                 case "role":
                     role = getStringParam(percept, 0);
+                    say("Role: " + role);
                     battery = getIntParam(percept, 9);
+                    // if(role.equals("drone")) {
+                    //     dronesGlobal.add(percept);
+                    // }
+                    // else if (role.equals("truck")) {
+                    //     trucksGlobal.add(percept);
+                    // }
+                    // agentsGlobal.add(percept);
                     break;
                 case "charge":
                     charge = getIntParam(percept, 0);
@@ -119,6 +146,7 @@ public class DeliveryAgent extends Agent{
                 case "step": step = getIntParam(percept, 0); break;
 				case "item":
                     carriedItems += " " + percept.toProlog();
+                    currentItem = percept;
 					numItems += 1;
                     break;
 			}
@@ -128,6 +156,7 @@ public class DeliveryAgent extends Agent{
 					case "job":
 						// remember all active jobs
 						currentJobs.putIfAbsent(stringParam(percept.getParameters(), 0), percept);
+						currentJobsGlobal = currentJobs;
 						break;
 					case "shop":
 						// remember shops by what they offer
@@ -139,12 +168,14 @@ public class DeliveryAgent extends Agent{
 								if(amount > 0){
 									shopsByItem.putIfAbsent(itemName, new ArrayList<>());
 									shopsByItem.get(itemName).add(percept);
+									shopsByItemGlobal = shopsByItem;
 								}
 							}
 						}
 						break;
 				}
             }
+        
         }
 
         // "elect" a leader
@@ -157,211 +188,226 @@ public class DeliveryAgent extends Agent{
 
         if(leader.equals(getName())) say("Score: " + score + " Massium: " + massium);
 
-        /*
-		if(carriedItems.isEmpty()==false){
-            say("I carry " + carriedItems);
-        }
-        */
+		return act();
+	}
 
 
 
 		// ********************		ACTIONS		******************** //
 
-        if(getName().equals(leader) && currentJob.equals("")) {
-            for(Percept job: jobs.values()) {
-                int endStep = getIntParam(job, 4);
-                if((endStep - step) > 100) {
-                    ParameterList items = (ParameterList) job.getParameters().get(5);
-                    // TODO distribute items among team members
-                }
-            }
-        }
+	private Action act(){
+        
+        // if(getName().equals(leader) && currentJob.equals("")) {
+        //     for(Percept job: jobs.values()) {
+        //         int endStep = getIntParam(job, 4);
+        //         if((endStep - step) > 100) {
+        //             ParameterList items = (ParameterList) job.getParameters().get(5);
+        //             // TODO distribute items among team members
+        //         }
+        //     }
+        // }
+        
+        // if(role.equals("drone") || role.equals("truck")) {
 
-        if(charge < .4 * battery) {
-            state = State.RECHARGE;
-            String station = "";
-            double minDist = Double.MAX_VALUE;
-            for(Percept p: chargingStations.values()) {
-                double cLat = getDoubleParam(p, 1);
-                double cLon = getDoubleParam(p, 2);
-                double dist = Math.sqrt(Math.pow(lat - cLat, 2) + Math.pow(lon - cLon, 2));
-                if(dist < minDist) {
-                    minDist = dist;
-                    station = getStringParam(p, 0);
+            if(charge < .4 * battery) {
+                state = State.RECHARGE;
+                String station = "";
+                double minDist = Double.MAX_VALUE;
+                for(Percept p: chargingStations.values()) {
+                    double cLat = getDoubleParam(p, 1);
+                    double cLon = getDoubleParam(p, 2);
+                    double dist = Math.sqrt(Math.pow(lat - cLat, 2) + Math.pow(lon - cLon, 2));
+                    if(dist < minDist) {
+                        minDist = dist;
+                        station = getStringParam(p, 0);
+                    }
                 }
-            }
-            if(!station.equals("")) {
-                Percept p = chargingStations.get(station);
-                chargingTarget = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
-            }
-        }
-
-        if(state == State.RECHARGE) {
-            if(charge > .8 * battery) {
-                if(goal != null) {
-                    // TODO resume goal
+                if(!station.equals("")) {
+                    Percept p = chargingStations.get(station);
+                    chargingTarget = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
                 }
-                else {
-                    state = State.EXPLORE;
-                }
+                flagCharged = false;
             }
-            else {
-                if (chargingTarget != null) {
-                    if (atLoc(chargingTarget)) {
-                        actionQueue.add(new Action("charge"));
+    
+            if(state == State.RECHARGE) {
+                // ADD SOMETHING IN GOAL!!!
+                if(charge > .8 * battery) {
+                    if(flagCharged) {
+                        // TODO resume goal
+                        state = State.JOB;
                     }
                     else {
-                        actionQueue.add(new Action("goto", 
-                        new Numeral(chargingTarget.lat), new Numeral(chargingTarget.lon)));
+                        state = State.EXPLORE;
                     }
-                }
-            }
-        }
-
-        /*
-        if(leader.equals(getName())) {
-            if(state == State.BUILD) {
-                if(buildCounter-- == 0) {
-                    state = State.EXPLORE;
                 }
                 else {
-                    lastBuild = step;
-                    actionQueue.add(new Action("build"));
-                }
-            }
-
-            if(step - lastBuild > 30 && wellName != null && massium > wellCost) {
-                state = State.BUILD;
-                buildCounter = 20; // IMPROVE check actual progress
-                actionQueue.add(new Action("build", new Identifier(wellName)));
-            }
-        }
-        */
-
-        if(exploreTarget != null) {
-            if(atLoc(exploreTarget)) {
-                // target reached
-                exploreTarget = null;
-            }
-        }
-
-        if(state == State.EXPLORE) {
-            if(exploreTarget == null || lastActionResult.equalsIgnoreCase("failed_no_route")) {
-                double expLat = minLat + rand.nextDouble() * (maxLat - minLat);
-                double expLon = minLon + rand.nextDouble() * (maxLon - minLon);
-                exploreTarget = new Loc(expLat, expLon);
-            }
-            actionQueue.add(new Action("goto", new Numeral(exploreTarget.lat), new Numeral(exploreTarget.lon)));
-        }
-
-
-		/*
-		if(atLoc(shopLoc)){
-		    String shopString = "";
-            double minDist = Double.MAX_VALUE;
-			if(numItems < 10) {
-				for(Percept p: shopsPercept.values()) {
-					double shopLat = getDoubleParam(p, 1);
-					double shopLon = getDoubleParam(p, 2);
-					double dist = Math.sqrt(Math.pow(lat - shopLat, 2) + Math.pow(lon - shopLon, 2));
-					if(dist < minDist) {
-						minDist = dist;
-						shopString = getStringParam(p, 0);
-					}
-				}
-			    Percept p = shopsPercept.get(shopString);
-                shopLoc = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
-				return new Action("goto", new Numeral(shopLoc.lat), new Numeral(shopLoc.lon));
-			}
-		}
-
-		if(atLoc(shopLoc)){
-
-		}
-		*/
-
-		// follow the plan if there is one
-        if(actionQueue.size() > 0) return actionQueue.poll();
-
-		// Associate a job to the agent
-		if (myJob == null){
-            Set<String> availableJobs = new HashSet<>(currentJobs.keySet());
-            availableJobs.removeAll(jobsTaken);
-            if(availableJobs.size() > 0){
-                myJob = availableJobs.iterator().next();
-                say("I will complete " + myJob);
-                jobsTaken.add(myJob);
-                broadcast(new Percept("taken", new Identifier(myJob)), getName());
-            }
-        }
-		// If already associated a job, carry it out
-		if(myJob != null){
-            // plan the job
-            // 1. acquire items
-            Percept job = currentJobs.get(myJob);
-            if(job == null){
-                say("I lost my job :(");
-                myJob = null;
-                return new Action("skip");
-            }
-            String storage = stringParam(job.getParameters(), 1);
-            ParameterList requirements = listParam(job, 4);
-            for (Parameter requirement : requirements) {
-                if(requirement instanceof Function){
-                    // 1.1 get enough items of that type
-                    String itemName = stringParam(((Function) requirement).getParameters(), 0);
-                    int amount = intParam(((Function) requirement).getParameters(), 1);
-                    if(itemName.equals("") || amount == -1){
-                        say("Something is wrong with this item: " + itemName + " " + amount);
-                        continue;
-                    }
-                    // find a shop selling the item
-                    List<Percept> shops = shopsByItem.get(itemName);
-                    if(shops.size() == 0){
-                        say("I cannot buy the item " + itemName + "; this plan won't work very well.");
-                    }
-                    else{
-                        say("I will go to the shop first.");
-                        // go to the shop
-                        Percept shop = shops.get(0);
-                        actionQueue.add(new Action("goto", new Identifier(stringParam(shop.getParameters(), 0))));
-                        // buy the items
-                        actionQueue.add(new Action("buy", new Identifier(itemName), new Numeral(amount)));
+                    if (chargingTarget != null) {
+                        if (atLoc(chargingTarget)) {
+                            flagCharged = true;
+                            say("Let's charge the battery");
+                            // Random giveItem = new Random();
+                            // int random = randTruck.nextDouble(1);
+                            if (currentItem != null) {
+                                // state = State.GIVE_AMAZON_ALEXA;
+                            }
+                            return new Action("charge");
+                        }
+                        else {
+                            say("Let's go to the charging station");
+                            return new Action("goto", 
+                            new Numeral(chargingTarget.lat), new Numeral(chargingTarget.lon));
+                        }
                     }
                 }
             }
-            // 2. get items to storage
-            actionQueue.add(new Action("goto", new Identifier(storage)));
-			// 2.1 store items
-			actionQueue.add(new Action("store"));
-            // 2.2 deliver items
-            actionQueue.add(new Action("deliver_job", new Identifier(myJob)));
-        }
+    
+            if(exploreTarget != null) {
+                if(atLoc(exploreTarget)) {
+                    // target reached
+                    exploreTarget = null;
+                }
+            }
+    
+            if(state == State.EXPLORE) {
+                say("I'm exploring!!");
+                if(exploreTarget == null || lastActionResult.equalsIgnoreCase("failed_no_route")) {
+                    double expLat = minLat + rand.nextDouble() * (maxLat - minLat);
+                    double expLon = minLon + rand.nextDouble() * (maxLon - minLon);
+                    exploreTarget = new Loc(expLat, expLon);
+                    busy = false;
+                }
+                return new Action("goto", new Numeral(exploreTarget.lat), new Numeral(exploreTarget.lon));
+            }
 
-        /*
-		if(numItems > 10) {
-			String dumpString = "";
-			double minDist = Double.MAX_VALUE;
-			for(Percept p: dumpsPercept.values()) {
-				double dumpLat = getDoubleParam(p, 1);
-				double dumpLon = getDoubleParam(p, 2);
-				double dist = Math.sqrt(Math.pow(lat - dumpLat, 2) + Math.pow(lon - dumpLon, 2));
-				if(dist < minDist) {
-					minDist = dist;
-					dumpString = getStringParam(p, 0);
-				}
-			}
-			Percept p = dumpsPercept.get(dumpString);
-            dumpLoc = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
-			return new Action("goto", new Numeral(dumpLoc.lat), new Numeral(dumpLoc.lon));
-		}
+            // if(state == State.GIVE_AMAZON_ALEXA){
+            //     Random randTruck = new Random(10);
+            //     int random = randTruck.nextInt(trucksGlobal.size());
+            //     Percept theTruck = trucksGlobal.get(random);
+            //     state = State.EXPLORE;
+                
+            //     return new Action("give", getStringParam(theTruck, 0), 
+            //     getStringParam(currentItem, 0), "1");
+            // }
 
-		if(atLoc(dumpLoc)){
-			return new Action("dump");
-        }
-        */
+            if(!busy && !resourceNodes.isEmpty()){
+                double minDist = Double.MAX_VALUE;
+                String resource = "";
+                for(Percept p: resourceNodes.values()){
+                    say("Resource node: " + p);
+                    double cLat = getDoubleParam(p, 1);
+                    double cLon = getDoubleParam(p, 2);
+                    double dist = Math.sqrt(Math.pow(lat - cLat, 2) + Math.pow(lon - cLon, 2));
+                    if(dist < minDist) {
+                        minDist = dist;
+                        resource = getStringParam(p, 0);
+                    }
+                }
+                if(!resource.equals("")) {
+                    Percept p = resourceNodes.get(resource);
+                    resourceNodeTarget = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
+                    state = State.GATHER;
+                }
+            }
 
-		return actionQueue.peek() != null? actionQueue.poll() : new Action("skip");
+            if(state == State.GATHER) {
+                // ADD SOMETHING IN GOAL!!!
+                say("Entering the gather state");
+                if (resourceNodeTarget != null) {
+                    if (atLoc(resourceNodeTarget)) {
+                        say("Let's gather the item and change state to JOB");
+                        state = State.JOB;
+                        return new Action("gather");
+                    }
+                    else {
+                        busy = true;
+                        say("Let's go to the resource node location to get the item");
+                        return new Action("goto", 
+                        new Numeral(resourceNodeTarget.lat), new Numeral(resourceNodeTarget.lon));
+                    }
+                }
+            }
+
+            // Associate a job to the agent
+            if (myJob == null){
+                
+                Set<String> availableJobs = new HashSet<>(currentJobsGlobal.keySet());
+                availableJobs.removeAll(jobsTaken);
+                if(availableJobs.size() > 0){
+                    myJob = availableJobs.iterator().next();
+                    say("I will complete " + myJob);
+                    jobsTaken.add(myJob);
+                    broadcast(new Percept("taken", new Identifier(myJob)), getName());
+                }
+            }
+
+            // If already associated a job, carry it out
+            if(state == State.JOB){
+                if(myJob != null){
+                    // plan the job
+                    // 1. acquire items
+                    Percept job = currentJobsGlobal.get(myJob);
+                    if(job == null){
+                        say("I lost my job :(");
+                        myJob = null;
+                        return new Action("skip");
+                    }
+                    String storage = stringParam(job.getParameters(), 1);
+                    ParameterList requirements = listParam(job, 5);
+                    
+                    for (Percept pStorage: storageGlobal.values()) {
+                        String storageName = stringParam(pStorage.getParameters(), 0);
+                        if(storageName.equalsIgnoreCase(storage)){
+                            storageLoc = new Loc(getDoubleParam(pStorage, 1), getDoubleParam(pStorage, 2));
+                            break;
+                        }
+                    }
+                    say("The storage to go to: " + storage +  " -> Location: " +  storageLoc);
+                    if(storageLoc != null){
+                        if(atLoc(storageLoc)){
+                            state = State.STORE;
+                        }
+                        else{
+                            return new Action("goto", new Identifier(storage));
+                        }
+                    }
+                }
+            }
+            if(state == State.SHOP) {
+                // go to the shop
+                Percept shop = shopsGlobal.get(0);
+                shopLoc = new Loc(getDoubleParam(shop, 1), getDoubleParam(shop, 2));
+                if(atLoc(shopLoc)){
+                    state = State.BUY;
+                }
+                return new Action("goto", new Identifier(stringParam(shop.getParameters(), 0)));
+            }
+            if(state == State.BUY) {
+                state = State.STORAGE;
+                // buy the items
+                return new Action("buy", new Identifier(itemNameGlobal), new Numeral(amountGlobal));
+            }
+            
+            if(state == State.STORE) {
+                state = State.DELIVERED;
+                // 2.1 store items
+                say("Storing item");
+                return new Action("store");
+            }
+            if(state == State.DELIVERED) {
+                state = State.EXPLORE;
+                // 2.2 deliver items
+                say("Set the item as delivered and going to explore");
+                return new Action("deliver_job", new Identifier(myJob));
+            }
+
+            return new Action("continue");
+        // }
+        // else if(role.equals("truck")){
+        //     if (currentItem == null){
+        //         return new Action("receive");
+        //     }
+        //     return new Action("dump", getStringParam(currentItem, 0));
+        // }
     }
 
     private boolean atLoc(Loc loc) {
@@ -417,7 +463,8 @@ public class DeliveryAgent extends Agent{
     }
 
     enum State {
-        EXPLORE, RECHARGE, JOB
+        EXPLORE, RECHARGE, JOB, STORE, DELIVERED, STORAGE, SHOP, BUY, GATHER,
+        GIVE_AMAZON_ALEXA
     }
 
     private static ParameterList listParam(Percept p, int index){
