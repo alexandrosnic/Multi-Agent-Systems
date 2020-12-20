@@ -47,6 +47,7 @@ public class DeliveryAgent extends Agent{
     private Random rand = new Random(17);
 
 	//***************      What I added:	***************
+	private String charge_truck = "";
 	private String carriedItems = "";
 	private int numItems = 0;
 	private Map<String, Percept> shopsPercept = new HashMap<>();
@@ -59,15 +60,25 @@ public class DeliveryAgent extends Agent{
 	private Map<String, List<Percept>> shopsByItemGlobal = new HashMap<>();
 	private Loc shopLoc;
 	private Loc storageLoc;
-    private List<Percept> shopsGlobal;
-    private List<Percept> agentsGlobal;
-    private List<Percept> dronesGlobal;
-    private List<Percept> trucksGlobal;
+	private Map<String, Percept> shopsGlobal = new HashMap<>();
+	private Map<String, Percept> agentsGlobal = new HashMap<>();
+	private Map<String, Percept> dronesGlobal = new HashMap<>();
 	private String itemNameGlobal;
 	private int amountGlobal;
     private boolean flagCharged = true;
     private boolean busy;
     private Percept currentItem;
+	private String currentJob_truck = "";
+	private Map<String, Percept> DeliveryTrucks = new HashMap<>();
+	private Loc truckTarget;
+	private String receivedItem;
+	private boolean dumpItem;
+	String truckLoc = "";
+	private String roleEntity = "";
+	private Map<String, Percept> trucksLocal = new HashMap<>();
+	private Map<String, Percept> trucksGlobal = new HashMap<>();
+	private boolean moveTruck = true;
+	//private ParameterList theTruckName;
 	// ****************************************************
 
 
@@ -87,12 +98,13 @@ public class DeliveryAgent extends Agent{
     @Override
     public Action step() {
 
-		
+		Map<String, Percept> trucksGlobal = new HashMap<>();
 		Map<String, List<Percept>> shopsByItem = new HashMap<>();
 		Map<String, Percept> currentJobs = new HashMap<>();
 
         // ********************		PERCEPTIONS		******************** //
         List<Percept> percepts = getPercepts();
+		say("The percepts are: " + getPercepts());
         for (Percept percept : percepts) {
             switch(percept.getName()) {
                 case "job":
@@ -112,13 +124,6 @@ public class DeliveryAgent extends Agent{
                     role = getStringParam(percept, 0);
                     say("Role: " + role);
                     battery = getIntParam(percept, 9);
-                    // if(role.equals("drone")) {
-                    //     dronesGlobal.add(percept);
-                    // }
-                    // else if (role.equals("truck")) {
-                    //     trucksGlobal.add(percept);
-                    // }
-                    // agentsGlobal.add(percept);
                     break;
                 case "charge":
                     charge = getIntParam(percept, 0);
@@ -148,6 +153,22 @@ public class DeliveryAgent extends Agent{
                     carriedItems += " " + percept.toProlog();
                     currentItem = percept;
 					numItems += 1;
+                    break;
+				case "entity":
+					
+					//entities = percept.getParameters();
+					say("The entities are: "+ percept);
+				    roleEntity = getStringParam(percept, 4);
+					broadcast(percept, getName());
+					if(roleEntity.equals("drone")) {
+						dronesGlobal.put(getStringParam(percept, 0), percept); 
+                    } else if (roleEntity.equals("truck")) {
+						trucksGlobal.put(getStringParam(percept, 0), percept); 
+						trucksLocal = trucksGlobal;
+						//theTruckName.add(percept.getParameters().get(0));
+					}
+					agentsGlobal.put(getStringParam(percept, 0), percept); 
+					say("My trucks of the game are: " + trucksGlobal);
                     break;
 			}
 			if(actionQueue.size() == 0){
@@ -184,6 +205,12 @@ public class DeliveryAgent extends Agent{
             this.leader = getName();
         }
 
+		// "elect" the charging truck
+        if(!role.equalsIgnoreCase("truck") && charge_truck.equals("")) {
+            broadcast(new Percept("charge_truck"), getName());
+            this.charge_truck = getName();
+        }
+
         say("My last action was " + lastAction + " : " + lastActionResult);
 
         if(leader.equals(getName())) say("Score: " + score + " Massium: " + massium);
@@ -206,39 +233,83 @@ public class DeliveryAgent extends Agent{
         //         }
         //     }
         // }
-        
-        // if(role.equals("drone") || role.equals("truck")) {
 
-            if(charge < .4 * battery) {
-                state = State.RECHARGE;
-                String station = "";
-                double minDist = Double.MAX_VALUE;
-                for(Percept p: chargingStations.values()) {
-                    double cLat = getDoubleParam(p, 1);
-                    double cLon = getDoubleParam(p, 2);
-                    double dist = Math.sqrt(Math.pow(lat - cLat, 2) + Math.pow(lon - cLon, 2));
-                    if(dist < minDist) {
-                        minDist = dist;
-                        station = getStringParam(p, 0);
-                    }
-                }
-                if(!station.equals("")) {
-                    Percept p = chargingStations.get(station);
-                    chargingTarget = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
-                }
-                flagCharged = false;
-            }
+
+		// if(getName().equals(charge_truck) && currentJob_truck.equals("")) {
+        //     for(Percept job: jobs.values()) {
+        //         int endStep = getIntParam(job, 4);
+        //         if((endStep - step) > 100) {
+        //             ParameterList items = (ParameterList) job.getParameters().get(5);
+        //             // TODO distribute items among team members
+        //         }
+        //     }
+        // }
+        
+        if(role.equals("drone") ) {
+
+			if(state == State.BATTERY) {
+				
+					Random randNum = new Random();
+					double charge_or_truck = randNum.nextDouble();
+					say("charge_or_truck is: " + charge_or_truck);
+					String station = "";
+					double minDist = Double.MAX_VALUE;
+					for(Percept p: chargingStations.values()) {
+						double cLat = getDoubleParam(p, 1);
+						double cLon = getDoubleParam(p, 2);
+						double dist = Math.sqrt(Math.pow(lat - cLat, 2) + Math.pow(lon - cLon, 2));
+						if(dist < minDist) {
+							minDist = dist;
+							station = getStringParam(p, 0);
+						}
+					}
+					if(!station.equals("")) {
+						Percept p = chargingStations.get(station);
+						chargingTarget = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
+					}
+					if (charge_or_truck > 0.5) {
+						state = State.RECHARGE;
+
+						flagCharged = false;
+					}
+					else {
+						if(trucksGlobal.isEmpty()) {
+							state = State.RECHARGE;
+						}
+						else {
+							state = State.GIVE_AMAZON_ALEXA;
+						
+							double minDistTruck = Double.MAX_VALUE;
+							for(Percept p: trucksGlobal.values()) {
+								double tLat = getDoubleParam(p, 2);
+								double tLon = getDoubleParam(p, 3);
+								double distTruck = Math.sqrt(Math.pow(lat - tLat, 2) + Math.pow(lon - tLon, 2));
+								if(distTruck < minDistTruck) {
+									minDistTruck = distTruck;
+									truckLoc = getStringParam(p, 0);
+									say("the trucks here are: " + trucksGlobal);
+									say("and the truck name is : " + truckLoc);
+								}
+							}
+							if(!truckLoc.equals("")) {
+								Percept p = trucksGlobal.get(truckLoc);
+								say("and the truck name now is : " + truckLoc);
+								say("the percept i chose : " + p);
+								say("the trucksGlobal i chose : " + trucksGlobal);
+								say("the percept i chose manually : " + trucksGlobal.get(truckLoc));
+								truckTarget = new Loc(getDoubleParam(p, 2), getDoubleParam(p, 3));
+							}
+						}
+						flagCharged = false;
+					}
+
+			}
     
             if(state == State.RECHARGE) {
                 // ADD SOMETHING IN GOAL!!!
                 if(charge > .8 * battery) {
-                    if(flagCharged) {
-                        // TODO resume goal
-                        state = State.JOB;
-                    }
-                    else {
-                        state = State.EXPLORE;
-                    }
+                    // TODO resume goal
+					state = State.JOB;
                 }
                 else {
                     if (chargingTarget != null) {
@@ -250,6 +321,7 @@ public class DeliveryAgent extends Agent{
                             if (currentItem != null) {
                                 // state = State.GIVE_AMAZON_ALEXA;
                             }
+							state = State.EXPLORE;
                             return new Action("charge");
                         }
                         else {
@@ -270,6 +342,9 @@ public class DeliveryAgent extends Agent{
     
             if(state == State.EXPLORE) {
                 say("I'm exploring!!");
+				if(charge < .6 * battery) {
+					state = State.BATTERY;
+				}
                 if(exploreTarget == null || lastActionResult.equalsIgnoreCase("failed_no_route")) {
                     double expLat = minLat + rand.nextDouble() * (maxLat - minLat);
                     double expLon = minLon + rand.nextDouble() * (maxLon - minLon);
@@ -279,15 +354,25 @@ public class DeliveryAgent extends Agent{
                 return new Action("goto", new Numeral(exploreTarget.lat), new Numeral(exploreTarget.lon));
             }
 
-            // if(state == State.GIVE_AMAZON_ALEXA){
-            //     Random randTruck = new Random(10);
-            //     int random = randTruck.nextInt(trucksGlobal.size());
-            //     Percept theTruck = trucksGlobal.get(random);
-            //     state = State.EXPLORE;
-                
-            //     return new Action("give", getStringParam(theTruck, 0), 
-            //     getStringParam(currentItem, 0), "1");
-            // }
+            if(state == State.GIVE_AMAZON_ALEXA){
+				Percept theTruck = trucksGlobal.get(truckLoc);
+				if (atLoc(truckTarget)) {
+					state = State.RECHARGE;
+					say("I arrived at the truck");
+					receivedItem = "true";
+					broadcast(new Percept("receivedItem", new Identifier(receivedItem)), getName());
+					// TO FIX
+					Parameter currentItemName = currentItem.getParameters().get(0);
+					Parameter theTruckNameLocal = theTruck.getParameters().get(0);
+					return new Action("give", theTruckNameLocal, currentItemName);
+				}
+				else {
+				    say("I'm running out of battery. I have to give the parcel to the delivery truck");
+                    return new Action("goto", 
+                    new Numeral(truckTarget.lat), new Numeral(truckTarget.lon));
+				}
+
+            }
 
             if(!busy && !resourceNodes.isEmpty()){
                 double minDist = Double.MAX_VALUE;
@@ -307,6 +392,9 @@ public class DeliveryAgent extends Agent{
                     resourceNodeTarget = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
                     state = State.GATHER;
                 }
+				else {
+					state = State.EXPLORE;
+				}
             }
 
             if(state == State.GATHER) {
@@ -401,13 +489,100 @@ public class DeliveryAgent extends Agent{
             }
 
             return new Action("continue");
-        // }
-        // else if(role.equals("truck")){
-        //     if (currentItem == null){
-        //         return new Action("receive");
-        //     }
-        //     return new Action("dump", getStringParam(currentItem, 0));
-        // }
+        }
+        else if(role.equals("truck")){
+            if (receivedItem=="true"){
+				receivedItem = "false";
+				dumpItem = true;
+				state = State.DELIVERTRUCK;
+                return new Action("receive");
+            }
+			if (state == State.DELIVERTRUCK){
+				
+				String myDump = "";
+				for(Percept p: dumpsPercept.values()) {
+					myDump = getStringParam(p, 0);
+				}
+
+				Percept p = dumpsPercept.get(myDump);
+				dumpLoc = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
+				if (dumpLoc != null) {
+					if(atLoc(dumpLoc)){
+					// TO FIX
+						Parameter currentItemName = currentItem.getParameters().get(0);
+						dumpItem = false;
+						state = State.EXPLORE;
+						return new Action("dump", currentItemName);
+					} else {
+
+						return new Action("goto", new Numeral(dumpLoc.lat), new Numeral(dumpLoc.lon));
+					}
+				}
+			}
+
+
+
+			if(charge < .5 * battery) {
+				state = State.RECHARGE;
+				String station = "";
+				double minDist = Double.MAX_VALUE;
+				for(Percept p: chargingStations.values()) {
+					double cLat = getDoubleParam(p, 1);
+					double cLon = getDoubleParam(p, 2);
+					double dist = Math.sqrt(Math.pow(lat - cLat, 2) + Math.pow(lon - cLon, 2));
+					if(dist < minDist) {
+						minDist = dist;
+						station = getStringParam(p, 0);
+					}
+				}
+				if(!station.equals("")) {
+					Percept p = chargingStations.get(station);
+					chargingTarget = new Loc(getDoubleParam(p, 1), getDoubleParam(p, 2));
+				}
+			}
+
+			if(state == State.RECHARGE) {
+				if(charge > .8 * battery) {
+					if(goal != null) {
+						// TODO resume goal
+					}
+					else {
+						state = State.EXPLORE;
+					}
+				}
+				else {
+					if (chargingTarget != null) {
+						if (atLoc(chargingTarget)) {
+							return new Action("charge");
+						}
+						else {
+							return new Action("goto", new Numeral(chargingTarget.lat), new Numeral(chargingTarget.lon));
+						}
+					}
+				}
+			}
+			if(exploreTarget != null) {
+				if(atLoc(exploreTarget)) {
+					// target reached
+					moveTruck = false;
+					exploreTarget = null;
+				}
+			}
+
+			if(state == State.EXPLORE) {
+				if(exploreTarget == null || lastActionResult.equalsIgnoreCase("failed_no_route")) {
+					double expLat = minLat + rand.nextDouble() * (maxLat - minLat);
+					double expLon = minLon + rand.nextDouble() * (maxLon - minLon);
+					exploreTarget = new Loc(expLat, expLon);
+				}
+				return new Action("goto", new Numeral(exploreTarget.lat), new Numeral(exploreTarget.lon));
+			}
+
+
+			
+            
+        }
+		return new Action("continue");
     }
 
     private boolean atLoc(Loc loc) {
@@ -448,6 +623,21 @@ public class DeliveryAgent extends Agent{
 			case "taken":
                 jobsTaken.add(stringParam(message.getParameters(), 0));
                 break;
+			case "receivedItem":
+				say("message.getParameters().get(0) = "+ message.getParameters().get(0));
+				receivedItem = stringParam(message.getParameters(), 0);
+				break;
+			case "entity":
+				String roleAgent = ((Identifier)message.getParameters().get(4)).getValue();
+				String nameAgent = ((Identifier)message.getParameters().get(0)).getValue();
+				if(roleAgent.equals("drone")) {
+					dronesGlobal.put(nameAgent, message); 
+				} else if (roleAgent.equals("truck")) {
+					trucksGlobal.put(nameAgent, message); 
+					//theTruckName.add(nameAgent);
+				}
+				say("TRUUUUUUUUUUUCKS" + trucksGlobal);
+				break;
             default:
                 say("I cannot handle a message of type " + message.getName());
         }
@@ -464,7 +654,7 @@ public class DeliveryAgent extends Agent{
 
     enum State {
         EXPLORE, RECHARGE, JOB, STORE, DELIVERED, STORAGE, SHOP, BUY, GATHER,
-        GIVE_AMAZON_ALEXA
+        GIVE_AMAZON_ALEXA, BATTERY, DELIVERTRUCK
     }
 
     private static ParameterList listParam(Percept p, int index){
